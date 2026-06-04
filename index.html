@@ -504,23 +504,24 @@ function renderCell_status(td,getter,setter){
       "New status…");
   };
 }
-function renderCell_target(td,getter,setter){
+function renderCell_target(td,getter,setter,statusGetter){
   td.className="ed"; td.innerHTML="";
-  var cur=getter(); var od=isOverdue(cur);
+  var cur=getter();
+  var od=isOverdue(cur)&&(!statusGetter||statusGetter()!=="released");
   var wrap=document.createElement("span");
   var span=document.createElement("span"); span.style.fontFamily='"DM Mono",monospace'; span.style.fontSize="11px"; span.style.color=od?"#f87171":"var(--mut)"; span.textContent=fmtDate(cur);
   wrap.appendChild(span);
   if(od){var tag=document.createElement("span");tag.className="overdue-tag";tag.textContent="overdue";wrap.appendChild(tag);}
   td.appendChild(wrap);
-  td.onclick=function(){openTargetEditor(td,getter,setter);};
+  td.onclick=function(){openTargetEditor(td,getter,setter,statusGetter);};
 }
-function openTargetEditor(td,getter,setter){
+function openTargetEditor(td,getter,setter,statusGetter){
   var cur=getter(); td.className="editing"; td.innerHTML="";
   var inp=document.createElement("input"); inp.type="date"; inp.className="dpick";
   if(cur&&cur!=="TBD") inp.value=cur;
   var tbdBtn=document.createElement("button"); tbdBtn.className="dtbd"+((!cur||cur==="TBD")?" on":""); tbdBtn.textContent="Set as TBD";
   td.appendChild(inp); td.appendChild(tbdBtn); inp.focus();
-  function save(val){setter(val);renderCell_target(td,getter,setter);flash(td);}
+  function save(val){setter(val);renderCell_target(td,getter,setter,statusGetter);flash(td);}
   inp.onchange=function(){if(inp.value)save(inp.value);};
   inp.onkeydown=function(e){if(e.key==="Escape"){setter(cur);renderCell_target(td,getter,setter);}};
   tbdBtn.onclick=function(){save("TBD");};
@@ -714,7 +715,7 @@ function render(){
 
       /* target */
       var tdT=document.createElement("td"); tdT.dataset.label="Target";
-      renderCell_target(tdT,function(){return rec.target;},function(v){rec.target=v;}); tr.appendChild(tdT);
+      renderCell_target(tdT,function(){return rec.target;},function(v){rec.target=v;},function(){return rec.status;}); tr.appendChild(tdT);
 
       /* poc */
       var tdPOC=document.createElement("td"); tdPOC.dataset.label="POC";
@@ -885,7 +886,7 @@ function importJSON(input){
 /* ════════ WIRE MARK-UNSAVED INTO ALL SETTERS ════════ */
 var _op=renderCell_product; renderCell_product=function(td,g,s){_op(td,g,function(v){s(v);markUnsaved();});};
 var _os=renderCell_status;  renderCell_status=function(td,g,s){_os(td,g,function(v){s(v);markUnsaved();});};
-var _ot=renderCell_target;  renderCell_target=function(td,g,s){_ot(td,g,function(v){s(v);markUnsaved();});};
+var _ot=renderCell_target;  renderCell_target=function(td,g,s,sg){_ot(td,g,function(v){s(v);markUnsaved();},sg);};
 var _oc=renderCell_poc;     renderCell_poc=function(td,g,s){_oc(td,g,function(v){s(v);markUnsaved();});};
 var _om=renderCell_comment; renderCell_comment=function(td,g,s){_om(td,g,function(v){s(v);markUnsaved();});};
 
